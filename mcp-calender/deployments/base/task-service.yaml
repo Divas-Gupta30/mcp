@@ -1,0 +1,98 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: task-service-config
+  labels:
+    app: task-service
+data:
+  PORT: "8081"
+  DATABASE_URL: "postgres://taskuser:taskpass@postgres:5432/taskdb?sslmode=disable"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-service
+  labels:
+    app: task-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: task-service
+  template:
+    metadata:
+      labels:
+        app: task-service
+    spec:
+      containers:
+        - name: task-service
+          image: task-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: task-service-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15-alpine
+          command: ['sh', '-c', 'until pg_isready -h postgres -p 5432 -U taskuser; do echo waiting for postgres; sleep 2; done;']
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-service
+  labels:
+    app: task-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: http
+  selector:
+    app: task-service
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-service-metrics
+  labels:
+    app: task-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8081
+      targetPort: 8081
+      protocol: TCP
+      name: metrics
+  selector:
+    app: task-service

@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

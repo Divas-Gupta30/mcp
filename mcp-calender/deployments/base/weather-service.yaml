@@ -1,0 +1,116 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: weather-credentials
+  labels:
+    app: weather-service
+type: Opaque
+stringData:
+  openweather-api-key: "your-openweathermap-api-key"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: weather-service-config
+  labels:
+    app: weather-service
+data:
+  PORT: "8083"
+  REDIS_URL: "redis:6379"
+  REDIS_DB: "0"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-service
+  labels:
+    app: weather-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: weather-service
+  template:
+    metadata:
+      labels:
+        app: weather-service
+    spec:
+      containers:
+        - name: weather-service
+          image: weather-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8083
+          env:
+            - name: OPENWEATHER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: weather-credentials
+                  key: openweather-api-key
+          envFrom:
+            - configMapRef:
+                name: weather-service-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      initContainers:
+        - name: wait-for-redis
+          image: redis:7-alpine
+          command: ['sh', '-c', 'until redis-cli -h redis ping; do echo waiting for redis; sleep 2; done;']
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-service
+  labels:
+    app: weather-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8083
+      targetPort: 8083
+      protocol: TCP
+      name: http
+  selector:
+    app: weather-service
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-service-metrics
+  labels:
+    app: weather-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8083"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8083
+      targetPort: 8083
+      protocol: TCP
+      name: metrics
+  selector:
+    app: weather-service
