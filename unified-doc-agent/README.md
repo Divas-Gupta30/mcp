@@ -21,14 +21,10 @@ unified-doc-agent/
 │   │   ├── critic.go
 │   │   └── workflow.go
 │   ├── query/              # User query interface
-│   │   ├── search.go
-│   │   └── answer.go
-│   └── utils/              # Shared helpers
-│       ├── logger.go
-│       └── config.go
-├── api/
-│   └── rest/               # Optional REST API layer (if needed later)
-│       └── server.go
+│     ├── search.go
+│     └── answer.go
+│   
+├
 ├── go.mod
 ├── go.sum
 └── README.md
