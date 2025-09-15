@@ -1,11 +1,11 @@
+```text
 unified-doc-agent/
 ├── cmd/
 │   └── agent/              # Main CLI entrypoint
 │       └── main.go
 ├── internal/
 │   ├── ingestion/          # File loading + OCR + parsing
-│   │   ├── local.go
-│   │   ├── gdrive.go
+│   │   ├── local.go 
 │   │   ├── pdf.go
 │   │   └── ocr.go
 │   ├── processing/         # Chunking, embeddings, metadata
@@ -14,17 +14,16 @@ unified-doc-agent/
 │   │   └── metadata.go
 │   ├── storage/            # Vector DB + metadata DB
 │   │   ├── vectordb.go
-│   │   └── sqlitedb.go
+│   │   └── db.go
 │   ├── graph/              # LangGraph-like orchestration
 │   │   ├── retriever.go
 │   │   ├── summarizer.go
 │   │   ├── critic.go
 │   │   └── workflow.go
 │   ├── query/              # User query interface
-│     ├── search.go
-│     └── answer.go
-│   
-├
+│      ├── search.go
+│      └── answer.go
+│
 ├── go.mod
 ├── go.sum
 └── README.md
